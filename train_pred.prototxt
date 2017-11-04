@@ -1,0 +1,377 @@
+name: "2dto3dColor"
+
+
+#------------------------------------------------------------------------------------------------------------
+# INPUT DATA
+#------------------------------------------------------------------------------------------------------------
+layer{name: "input_images" type: "ImageData"
+    top: "input_images" top: "input_labels"
+    transform_param {scale: 0.00392156862}
+    include {phase: TRAIN}
+    #image_data_param{source: "shapenet_cars_rendered_new_train.txt" batch_size: 16 shuffle: false}}
+    image_data_param{source: "imageSrc.txt" batch_size: 16 shuffle: true}}
+
+layer{name: "input_images" type: "ImageData"
+    top: "input_images" top: "input_labels"
+    transform_param {scale: 0.00392156862}
+    include {phase: TEST}
+    #image_data_param{source: "shapenet_cars_rendered_new_train.txt" batch_size: 16 shuffle: false}}
+    image_data_param{source: "imageSrc.txt" batch_size: 16 shuffle: false}}
+
+layer {name: "octree_models" type: "OGNData"
+  bottom: "input_labels" top: "octree_model_values" top: "octree_labels"
+  #ogn_data_param {batch_size: 16 source: "model_names.txt" preload_data: false}}
+  ogn_data_param {batch_size: 16 source: "occ.txt" preload_data: false}}
+
+layer{name: "silence_octree_values" type: "Silence"
+  bottom: "octree_model_values"}
+
+layer{name: "silence_octree_labels" type: "Silence"
+  bottom: "octree_labels"}
+
+layer {name: "octree_color_models" type: "OGNColorData"
+  bottom: "input_labels" top: "octree_color_model_values" top: "octree_color_labels"
+  ogn_color_data_param {batch_size: 16 source: "model.txt" preload_data: false}}
+
+layer{name: "silence_octree_color_values" type: "Silence"
+  bottom: "octree_color_model_values"}
+
+layer{name: "silence_octree_labels" type: "Silence"
+  bottom: "octree_color_labels"}
+
+
+#------------------------------------------------------------------------------------------------------------
+
+
+#------------------------------------------------------------------------------------------------------------
+# 2D CONVOLUTIONAL ENCODER
+#------------------------------------------------------------------------------------------------------------
+layer{name: "e_conv4" type: "Convolution"
+  bottom: "input_images" top: "e_conv4"
+  param { lr_mult: 1 decay_mult: 0 } param { lr_mult: 1 decay_mult: 0 }
+  convolution_param {engine: CAFFE num_output: 32 pad: 3 kernel_size: 7 stride: 2
+  weight_filler {type: "msra"} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer{name: "relu_e_conv4" type: "ReLU"
+    bottom: "e_conv4" top: "e_conv4"}
+
+layer{name: "e_conv3" type: "Convolution"
+  bottom: "e_conv4" top: "e_conv3"
+  param { lr_mult: 1 decay_mult: 0 } param { lr_mult: 1 decay_mult: 0 }
+  convolution_param {engine: CAFFE num_output: 32 pad: 1 kernel_size: 3 stride: 2
+  weight_filler {type: "msra"} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer{name: "relu_e_conv3" type: "ReLU"
+    bottom: "e_conv3" top: "e_conv3"}
+
+layer{name: "e_conv2" type: "Convolution"
+  bottom: "e_conv3" top: "e_conv2"
+  param { lr_mult: 1 decay_mult: 0 } param { lr_mult: 1 decay_mult: 0 }
+  convolution_param {engine: CAFFE num_output: 64 pad: 1 kernel_size: 3 stride: 2
+  weight_filler {type: "msra"} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer{name: "relu_e_conv2" type: "ReLU"
+    bottom: "e_conv2" top: "e_conv2"}
+
+layer{name: "e_conv1" type: "Convolution"
+  bottom: "e_conv2" top: "e_conv1"
+  param { lr_mult: 1 decay_mult: 0 } param { lr_mult: 1 decay_mult: 0 }
+  convolution_param {engine: CAFFE num_output: 64 pad: 1 kernel_size: 3 stride: 2
+  weight_filler {type: "msra"} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer{name: "relu_e_conv1" type: "ReLU"
+    bottom: "e_conv1" top: "e_conv1"}
+
+layer{name: "e_conv0" type: "Convolution"
+  bottom: "e_conv1" top: "e_conv0"
+  param { lr_mult: 1 decay_mult: 0 } param { lr_mult: 1 decay_mult: 0 }
+  convolution_param {engine: CAFFE num_output: 128 pad: 1 kernel_size: 3 stride: 2
+  weight_filler {type: "msra"} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer{name: "relu_e_conv0" type: "ReLU"
+    bottom: "e_conv0" top: "e_conv0"}
+#------------------------------------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------------------------------------
+# FC PROCESSING
+#------------------------------------------------------------------------------------------------------------
+layer {name: "fc1" type: "InnerProduct"
+  bottom: "e_conv0" top: "fc1"
+  param {lr_mult: 1 decay_mult: 1} param {lr_mult: 1 decay_mult: 1}
+  inner_product_param {num_output: 1024 weight_filler {type: "msra"} bias_filler { type: 'gaussian' std:0.1}}}
+
+layer {name: 'relu_fc1' type: 'ReLU' bottom: 'fc1' top: 'fc1' relu_param{engine: CAFFE}}
+
+layer {name: "fc2" type: "InnerProduct"
+  bottom: "fc1" top: "fc2"
+  param {lr_mult: 1 decay_mult: 1} param {lr_mult: 1 decay_mult: 1}
+  inner_product_param {num_output: 1024 weight_filler {type: "msra"} bias_filler { type: 'gaussian' std:0.1}}}
+
+layer {name: 'relu_fc2' type: 'ReLU'
+  bottom: 'fc2' top: 'fc2'
+  relu_param{engine: CAFFE}}
+
+layer {name: "fc3" type: "InnerProduct"
+  bottom: "fc2" top: "fc3"
+  param {lr_mult: 1 decay_mult: 1} param {lr_mult: 1 decay_mult: 1}
+  inner_product_param {num_output: 7168 weight_filler {type: "msra"} bias_filler { type: 'gaussian' std:0.1}}}
+
+layer {name: 'relu_fc3' type: 'ReLU'
+  bottom: 'fc3' top: 'fc3'
+  relu_param{engine: CAFFE}}
+#------------------------------------------------------------------------------------------------------------
+
+
+layer {name: "reshape_intern" type: "Reshape"
+  bottom: "fc3" top: "reshaped_intern"
+  reshape_param {shape{dim: 0 dim: 112 dim: 4 dim: 4 dim: 4}}}
+
+layer {name: 'deconv3' type: 'Deconvolution'
+  bottom: 'reshaped_intern' top: 'deconv3'
+  param {lr_mult: 1 decay_mult: 1} param { lr_mult: 1 decay_mult: 1 }
+  convolution_param {num_output: 96 pad: 0 kernel_size: 2 stride: 2 weight_filler { type: 'msra' } bias_filler { type: 'gaussian' std:0.1}}}
+
+layer {name: 'relu_deconv3' type: 'ReLU'
+  bottom: 'deconv3' top: 'deconv3' relu_param{engine: CAFFE}}
+
+layer{name: "conv3" type: "Convolution"
+  bottom: "deconv3" top: "conv3"
+  param { lr_mult: 1 decay_mult: 0 } param { lr_mult: 1 decay_mult: 0 }
+  convolution_param {engine: CAFFE num_output: 96 pad: 1 kernel_size: 3 stride: 1
+  weight_filler {type: "msra"} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer {name: 'relu_conv3' type: 'ReLU'
+  bottom: 'conv3' top: 'conv3' relu_param{engine: CAFFE}}
+
+layer {name: 'deconv2' type: 'Deconvolution'
+  bottom: 'conv3' top: 'deconv2'
+  param {lr_mult: 1 decay_mult: 1} param {lr_mult: 1 decay_mult: 1}
+  convolution_param {num_output: 80 pad: 0 kernel_size: 2 stride: 2
+  weight_filler {type: 'msra'} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer {name: 'relu_deconv2' type: 'ReLU'
+  bottom: 'deconv2' top: 'deconv2' relu_param{engine: CAFFE}}
+
+layer{name: "conv2" type: "Convolution"
+  bottom: "deconv2" top: "conv2"
+  param { lr_mult: 1 decay_mult: 0 } param { lr_mult: 1 decay_mult: 0 }
+  convolution_param {engine: CAFFE num_output: 80 pad: 1 kernel_size: 3 stride: 1
+  weight_filler {type: "msra"} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer {name: 'relu_conv2' type: 'ReLU'
+  bottom: 'conv2' top: 'conv2' relu_param{engine: CAFFE}}
+
+layer{name: "initial_keys" type: "OGNGenerateKeys"
+  bottom: "conv2"}
+
+layer {name: "reshape_conv2" type: "Reshape"
+       bottom: "conv2" top: "reshaped_conv2"
+       reshape_param {shape{dim: 0 dim: 0 dim: -1}}}
+
+#------------------------------------------------------------------------------------------------------------
+# PREDICTION 2
+#------------------------------------------------------------------------------------------------------------
+layer{name: "value_conv2" type: "Convolution"
+  bottom: "reshaped_conv2" top: "pred_values2"
+  param { lr_mult: 1 decay_mult: 0 } param { lr_mult: 1 decay_mult: 0 }
+  convolution_param {engine: CAFFE num_output: 3 kernel_size: 1 stride: 1
+  weight_filler {type: "msra"} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer{name: "prep_loss2" type: "OGNLossPrep"
+  bottom: "reshaped_conv2" bottom: "octree_model_values" top: "prep_loss2"
+  ogn_loss_prep_param{pr_key_layer: "initial_keys" gt_key_layer: "octree_models"}}
+
+layer{name: "loss0" type: "SoftmaxWithLoss"
+  bottom: "pred_values2" bottom: "prep_loss2" top: "loss0"
+  propagate_down: true propagate_down: false loss_weight: 1
+  loss_param{ignore_label: 3}}
+
+layer{type: "Softmax" name: "pred_values2_softmax"
+    bottom: "pred_values2" top: "pred_values2_sm"}
+
+#-----------------------------------------------------------------------------------------------
+#Color Loss 2
+#-----------------------------------------------------------------------------------------------
+layer{name: "value_color_conv2" type: "Convolution"
+  bottom: "reshaped_conv2" top: "pred_color_values2"
+  param { lr_mult: 1 decay_mult: 0 } param { lr_mult: 1 decay_mult: 0 }
+  convolution_param {engine: CAFFE num_output: 3 kernel_size: 1 stride: 1
+  weight_filler {type: "msra"} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer{name: "prep_color_loss2" type: "OGNColorLossPrep"
+  bottom: "reshaped_conv2" bottom: "octree_color_model_values" top: "prep_color_loss2"
+  ogn_color_loss_prep_param{pr_key_layer: "initial_keys" gt_key_layer: "octree_color_models"}}
+
+layer{name: "color_loss0" type: "EuclideanLoss"
+  bottom: "pred_color_values2" bottom: "prep_color_loss2" top: "color_loss0"
+  propagate_down: true propagate_down: false loss_weight: 0.01
+  loss_param{ignore_label: 3}}
+
+
+
+#------------------------------------------------------------------------------------------------------------
+
+layer{name: "prop_features2" type: "OGNProp"
+  bottom: "reshaped_conv2" bottom: "pred_values2_sm" top: "prop_features2"
+  ogn_prop_param{key_layer: "initial_keys" prop_mode: PROP_PRED}}
+
+layer{name: "deconv1" type: "OGNConv"
+  bottom: "prop_features2" top: "deconv1_features"
+  param { lr_mult: 1 decay_mult: 0 } param { lr_mult: 1 decay_mult: 0 }
+  ogn_conv_param{is_deconv: true filter_size: 2 output_channels: 64 key_layer: "prop_features2"
+     weight_filler {type: 'msra'} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer {name: 'relu_deconv1' type: 'ReLU'
+  bottom: 'deconv1_features' top: 'deconv1_features'
+  relu_param{engine: CAFFE}}
+
+#------------------------------------------------------------------------------------------------------------
+# PREDICTION 1
+#------------------------------------------------------------------------------------------------------------
+layer{name: "value_conv1" type: "Convolution"
+  bottom: "deconv1_features" top: "pred_values1"
+  param { lr_mult: 1 decay_mult: 0 } param { lr_mult: 1 decay_mult: 0 }
+  convolution_param {engine: CAFFE num_output: 3 kernel_size: 1 stride: 1
+  weight_filler {type: "msra"} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer{name: "prep_loss1" type: "OGNLossPrep"
+  bottom: "deconv1_features" bottom: "octree_model_values" top: "prep_loss1"
+  ogn_loss_prep_param{pr_key_layer: "deconv1" gt_key_layer: "octree_models" use_voxel_grid: true}}
+
+layer{name: "loss1" type: "SoftmaxWithLoss"
+  bottom: "pred_values1" bottom: "prep_loss1" top: "loss1"
+  propagate_down: true propagate_down: false loss_weight: 1
+  loss_param{ignore_label: 3}}
+
+layer{type: "Softmax" name: "pred_values1_softmax"
+    bottom: "pred_values1" top: "pred_values1_sm"}
+
+#-----------------------------------------------------------------------------------------------
+#Color Loss 1
+#-----------------------------------------------------------------------------------------------
+layer{name: "value_color_conv1" type: "Convolution"
+  bottom: "deconv1_features" top: "pred_color_values1"
+  param { lr_mult: 1 decay_mult: 0 } param { lr_mult: 1 decay_mult: 0 }
+  convolution_param {engine: CAFFE num_output: 3 kernel_size: 1 stride: 1
+  weight_filler {type: "msra"} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer{name: "prep_color_loss1" type: "OGNColorLossPrep"
+  bottom: "deconv1_features" bottom: "octree_color_model_values" top: "prep_color_loss1"
+  ogn_color_loss_prep_param{pr_key_layer: "deconv1" gt_key_layer: "octree_color_models" use_voxel_grid:true }}
+
+layer{name: "color_loss0" type: "EuclideanLoss"
+  bottom: "pred_color_values1" bottom: "prep_color_loss1" top: "color_loss1"
+  propagate_down: true propagate_down: false loss_weight: 0.01
+  loss_param{ignore_label: 3}}
+
+
+#------------------------------------------------------------------------------------------------------------
+
+layer{name: "prop_features1" type: "OGNProp"
+  bottom: "deconv1_features" bottom: "pred_values1_sm" top: "prop_features1"
+  ogn_prop_param{key_layer: "deconv1" prop_mode: PROP_PRED}}
+
+layer{name: "deconv0" type: "OGNConv"
+  bottom: "prop_features1" top: "deconv0_features"
+  param { lr_mult: 1 decay_mult: 0 } param { lr_mult: 1 decay_mult: 0 }
+  ogn_conv_param{is_deconv: true filter_size: 2 output_channels: 48 key_layer: "prop_features1"
+     weight_filler {type: 'msra'} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer {name: 'relu_deconv0' type: 'ReLU'
+  bottom: 'deconv0_features' top: 'deconv0_features'
+  relu_param{engine: CAFFE}}
+
+#------------------------------------------------------------------------------------------------------------
+# PREDICTION 0
+#------------------------------------------------------------------------------------------------------------
+layer{name: "value_conv0" type: "Convolution"
+  bottom: "deconv0_features" top: "pred_values0"
+  param { lr_mult: 1 decay_mult: 0 } param { lr_mult: 1 decay_mult: 0 }
+  convolution_param {engine: CAFFE num_output: 3 kernel_size: 1 stride: 1
+  weight_filler {type: "msra"} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer{name: "prep_loss0" type: "OGNLossPrep"
+  bottom: "deconv0_features" bottom: "octree_model_values" top: "prep_loss0"
+  ogn_loss_prep_param{pr_key_layer: "deconv0" gt_key_layer: "octree_models" use_voxel_grid: true}}
+
+layer{name: "loss0" type: "SoftmaxWithLoss"
+  bottom: "pred_values0" bottom: "prep_loss0" top: "loss2"
+  propagate_down: true propagate_down: false loss_weight: 1
+  loss_param{ignore_label: 3}}
+
+layer{type: "Softmax" name: "pred_values0_softmax"
+    bottom: "pred_values0" top: "pred_values0_sm"}
+
+#-----------------------------------------------------------------------------------------------
+#Color Loss 0
+#-----------------------------------------------------------------------------------------------
+layer{name: "value_color_conv0" type: "Convolution"
+  bottom: "deconv0_features" top: "pred_color_values0"
+  param { lr_mult: 1 decay_mult: 0 } param { lr_mult: 1 decay_mult: 0 }
+  convolution_param {engine: CAFFE num_output: 3 kernel_size: 1 stride: 1
+  weight_filler {type: "msra"} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer{name: "prep_color_loss0" type: "OGNColorLossPrep"
+  bottom: "deconv0_features" bottom: "octree_color_model_values" top: "prep_color_loss0"
+  ogn_color_loss_prep_param{pr_key_layer: "deconv0" gt_key_layer: "octree_color_models" use_voxel_grid:true }}
+
+layer{name: "color_loss0" type: "EuclideanLoss"
+  bottom: "pred_color_values0" bottom: "prep_color_loss0" top: "color_loss2"
+  propagate_down: true propagate_down: false loss_weight: 0.01
+  loss_param{ignore_label: 3}}
+
+
+#------------------------------------------------------------------------------------------------------------
+
+layer{name: "prop_features0" type: "OGNProp"
+  bottom: "deconv0_features" bottom: "pred_values0_sm" top: "prop_features0"
+  ogn_prop_param{key_layer: "deconv0" prop_mode: PROP_PRED}}
+
+layer{name: "deconv00" type: "OGNConv"
+  bottom: "prop_features0" top: "deconv00_features"
+  param { lr_mult: 1 decay_mult: 0 } param { lr_mult: 1 decay_mult: 0 }
+  ogn_conv_param{is_deconv: true filter_size: 2 output_channels: 32 key_layer: "prop_features0"
+     weight_filler {type: 'msra'} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer {name: 'relu_deconv00' type: 'ReLU'
+  bottom: 'deconv00_features' top: 'deconv00_features'
+  relu_param{engine: CAFFE}}
+
+#------------------------------------------------------------------------------------------------------------
+# PREDICTION 00
+#------------------------------------------------------------------------------------------------------------
+layer{name: "value_conv00" type: "Convolution"
+  bottom: "deconv00_features" top: "pred_values00"
+  param { lr_mult: 1 decay_mult: 0 } param { lr_mult: 1 decay_mult: 0 }
+  convolution_param {engine: CAFFE num_output: 3 kernel_size: 1 stride: 1
+  weight_filler {type: "msra"} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer{name: "prep_loss00" type: "OGNLossPrep"
+  bottom: "deconv00_features" bottom: "octree_model_values" top: "prep_loss00"
+  ogn_loss_prep_param{pr_key_layer: "deconv00" gt_key_layer: "octree_models" use_voxel_grid: true}}
+
+layer{name: "loss00" type: "SoftmaxWithLoss"
+  bottom: "pred_values00" bottom: "prep_loss00" top: "loss3"
+  propagate_down: true propagate_down: false loss_weight: 1
+  loss_param{ignore_label: 3}}
+
+#-----------------------------------------------------------------------------------------------
+#Color Loss 00
+#-----------------------------------------------------------------------------------------------
+layer{name: "value_color_conv00" type: "Convolution"
+  bottom: "deconv00_features" top: "pred_color_values00"
+  param { lr_mult: 1 decay_mult: 0 } param { lr_mult: 1 decay_mult: 0 }
+  convolution_param {engine: CAFFE num_output: 3 kernel_size: 1 stride: 1
+  weight_filler {type: "msra"} bias_filler {type: 'gaussian' std:0.1}}}
+
+layer{name: "prep_color_loss00" type: "OGNColorLossPrep"
+  bottom: "deconv00_features" bottom: "octree_color_model_values" top: "prep_color_loss00"
+  ogn_color_loss_prep_param{pr_key_layer: "deconv00" gt_key_layer: "octree_color_models" use_voxel_grid:true }}
+
+layer{name: "color_loss00" type: "EuclideanLoss"
+  bottom: "pred_color_values00" bottom: "prep_color_loss00" top: "color_loss3"
+  propagate_down: true propagate_down: false loss_weight: 0.01
+  loss_param{ignore_label: 3}}
+
+
+#------------------------------------------------------------------------------------------------------------

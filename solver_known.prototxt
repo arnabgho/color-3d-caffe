@@ -1,0 +1,18 @@
+net: 'train_known.prototxt'
+base_lr: 0.001
+gamma: 0.1
+lr_policy: "multistep"
+stepvalue: 30000
+stepvalue: 70000
+
+display: 1
+max_iter: 300000
+momentum: 0.9
+snapshot: 1000
+snapshot_prefix: 'snapshots_known/snapshot'
+test_iter: 10
+test_interval: 40
+solver_mode:   GPU
+debug_info:    0
+solver_type:   ADAM
+momentum2: 0.999
