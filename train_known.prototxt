@@ -256,7 +256,7 @@ layer{name: "prep_color_loss1" type: "OGNColorLossPrep"
   bottom: "deconv1_features" bottom: "octree_color_model_values" top: "prep_color_loss1"
   ogn_color_loss_prep_param{pr_key_layer: "deconv1" gt_key_layer: "octree_color_models" }}
 
-layer{name: "color_loss0" type: "EuclideanLoss"
+layer{name: "color_loss1" type: "EuclideanLoss"
   bottom: "pred_color_values1" bottom: "prep_color_loss1" top: "color_loss1"
   propagate_down: true propagate_down: false loss_weight: 1}
 
