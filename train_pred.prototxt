@@ -181,8 +181,8 @@ layer{name: "prep_loss2" type: "OGNLossPrep"
   bottom: "reshaped_conv2" bottom: "octree_model_values" top: "prep_loss2"
   ogn_loss_prep_param{pr_key_layer: "initial_keys" gt_key_layer: "octree_models"}}
 
-layer{name: "loss0" type: "SoftmaxWithLoss"
-  bottom: "pred_values2" bottom: "prep_loss2" top: "loss0"
+layer{name: "loss2" type: "SoftmaxWithLoss"
+  bottom: "pred_values2" bottom: "prep_loss2" top: "loss2"
   propagate_down: true propagate_down: false loss_weight: 1
   loss_param{ignore_label: 3}}
 
@@ -202,8 +202,8 @@ layer{name: "prep_color_loss2" type: "OGNColorLossPrep"
   bottom: "reshaped_conv2" bottom: "octree_color_model_values" top: "prep_color_loss2"
   ogn_color_loss_prep_param{pr_key_layer: "initial_keys" gt_key_layer: "octree_color_models"}}
 
-layer{name: "color_loss0" type: "EuclideanLoss"
-  bottom: "pred_color_values2" bottom: "prep_color_loss2" top: "color_loss0"
+layer{name: "color_loss2" type: "EuclideanLoss"
+  bottom: "pred_color_values2" bottom: "prep_color_loss2" top: "color_loss2"
   propagate_down: true propagate_down: false loss_weight: 0.01
   loss_param{ignore_label: 3}}
 
@@ -259,7 +259,7 @@ layer{name: "prep_color_loss1" type: "OGNColorLossPrep"
   bottom: "deconv1_features" bottom: "octree_color_model_values" top: "prep_color_loss1"
   ogn_color_loss_prep_param{pr_key_layer: "deconv1" gt_key_layer: "octree_color_models" use_voxel_grid:true }}
 
-layer{name: "color_loss0" type: "EuclideanLoss"
+layer{name: "color_loss1" type: "EuclideanLoss"
   bottom: "pred_color_values1" bottom: "prep_color_loss1" top: "color_loss1"
   propagate_down: true propagate_down: false loss_weight: 0.01
   loss_param{ignore_label: 3}}
@@ -295,7 +295,7 @@ layer{name: "prep_loss0" type: "OGNLossPrep"
   ogn_loss_prep_param{pr_key_layer: "deconv0" gt_key_layer: "octree_models" use_voxel_grid: true}}
 
 layer{name: "loss0" type: "SoftmaxWithLoss"
-  bottom: "pred_values0" bottom: "prep_loss0" top: "loss2"
+  bottom: "pred_values0" bottom: "prep_loss0" top: "loss0"
   propagate_down: true propagate_down: false loss_weight: 1
   loss_param{ignore_label: 3}}
 
@@ -316,7 +316,7 @@ layer{name: "prep_color_loss0" type: "OGNColorLossPrep"
   ogn_color_loss_prep_param{pr_key_layer: "deconv0" gt_key_layer: "octree_color_models" use_voxel_grid:true }}
 
 layer{name: "color_loss0" type: "EuclideanLoss"
-  bottom: "pred_color_values0" bottom: "prep_color_loss0" top: "color_loss2"
+  bottom: "pred_color_values0" bottom: "prep_color_loss0" top: "color_loss0"
   propagate_down: true propagate_down: false loss_weight: 0.01
   loss_param{ignore_label: 3}}
 
@@ -351,7 +351,7 @@ layer{name: "prep_loss00" type: "OGNLossPrep"
   ogn_loss_prep_param{pr_key_layer: "deconv00" gt_key_layer: "octree_models" use_voxel_grid: true}}
 
 layer{name: "loss00" type: "SoftmaxWithLoss"
-  bottom: "pred_values00" bottom: "prep_loss00" top: "loss3"
+  bottom: "pred_values00" bottom: "prep_loss00" top: "loss00"
   propagate_down: true propagate_down: false loss_weight: 1
   loss_param{ignore_label: 3}}
 
@@ -369,7 +369,7 @@ layer{name: "prep_color_loss00" type: "OGNColorLossPrep"
   ogn_color_loss_prep_param{pr_key_layer: "deconv00" gt_key_layer: "octree_color_models" use_voxel_grid:true }}
 
 layer{name: "color_loss00" type: "EuclideanLoss"
-  bottom: "pred_color_values00" bottom: "prep_color_loss00" top: "color_loss3"
+  bottom: "pred_color_values00" bottom: "prep_color_loss00" top: "color_loss00"
   propagate_down: true propagate_down: false loss_weight: 0.01
   loss_param{ignore_label: 3}}
 
